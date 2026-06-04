@@ -1,0 +1,192 @@
+#直接查找  特征：查找量少的
+def SeqSearch(R,K):#顺序查找
+    n = len(R)
+    i = 0
+    while i < n and R[i] == K:
+        i += 1
+    if i == n:
+        return -1
+    else:
+        return i
+
+def SeqSearch2(R,K):#顺序查找 哨兵
+    n = len(R)
+    i = 0
+    R.append(K)
+    while R[i] != K:
+        i += 1
+    if i == n:
+        return -1
+    else:
+        return i
+
+
+
+#折半查找 特征：查找有序的 但是插入和删除效率低 不能动态变化
+#way1
+def BinSearch(R,K):
+    n = len(R)
+    low = 0
+    hight = n-1
+    while low < hight:
+        mid = (low+hight)//2
+        if R[mid] == K:
+            return mid
+        else:
+            if R[mid] < K:
+                low = mid +1
+            if R[mid] > K:
+                hight = mid -1
+    return -1
+
+#way2
+def BinSearch2(R,K):#递归
+    return BinSearch21(R,0,len(R)-1,K)
+
+def BinSearch21(R,low,high,K):
+    if low < high:
+        mid = (high + low)//2
+        if R[mid] == K:
+            return mid
+        if R[mid] < K:
+            return BinSearch2(R,low,mid-1,K)
+        else:
+            return BinSearch2(R,mid+1,high,K)
+
+
+
+
+#二叉排序树 特征：查找有序的 插入和删除效率高 可以动态变化  时间复杂度在 O(log n)到 O(n)“长歪的情况”
+class BSTNode:#创建节点
+    def __init__(self,k,d = None,l = None,r = None):
+        self.key = k
+        self.data = d
+        self.lchild = l
+        self.rchild = r
+
+class BSTClass:#创建树
+    def __init__(self):
+        self.r = None
+        self.f = None
+
+    #插入k
+    def InsertBST1(self,k,d):
+        self.r = self._InsertBST(self,p,k,d)
+
+    def InsertBST(self,p,k,d):
+        if p == None:
+            p.BSTNode(k,d)
+        elif k < p.key:
+            p.lchild = self._InsertBST(p.lchild,k,d)#递归 找到最后一个符合的 child为空的节点"p == None" 放上去
+        elif k > p.key:
+            p.rchild = self._InsertBST(p.rchild,k,d)#为什么是“p.lchild or p.rchild” 这里的_InsertBST(p.rchild,k,d) 不要混淆成最后那个值为k的刚插入的节点 而是当前这个节点的child节点 除了最后一层循环 在其他的循环这个child是不变的
+        else:
+            p.data = d #p.key == k的情况 更新p.data为d
+        return p
+
+    def CreateBST(self,a):#由关键字序列a创建一个二叉排序树
+        self.r = BSTNode(a[0][0],a[0][1])#a[0][0]是key“k”，a[0][1]是data"d" 这里省略了l和r
+        for i in range(1,len(a)):
+            self.InsertBST(self.r,a[i][0],a[i][1])
+
+    #查找
+    def SearchBST(self,k):#为了引出第二个def 因为第二个def是受_保护的 而且使用者只需要知道k而不需要知道p就能直接使用
+        return _SearchBST(self,self.r,k)
+
+    def _SearchBST(self,p,k):
+        if p == None:#当为空时
+            return None
+        if p.key == k:#当找到时
+            return p
+        if p.key < k:
+            return self._SearchBST(p.rchild,k)
+        else:
+            return self._SearchBST(p.lchild,k)
+
+    #删除的代码太难了 先不写
+
+
+
+    #平衡二叉树 最主要的就是AVL树  特征：适合动态查找 是更保险的二叉排序树 因为二叉排序树容易长歪 所以需要一个能让他更平衡的东西 让他的时间复杂度保持在 O(log n)
+    #AVL树                         ”长歪“就是 插入和删除会让他变得“不平衡” 比如左子树层高为10 右子树层高为1 查找右子树的时候就很快 左子树就很慢
+    class AVLNode:
+        def __init__(self,k,d):
+            self.key = k
+            self.data = d
+            self.left = None
+            self.right = None
+            self.ht = 1
+
+        def get_height(self,p):#用来处理 p == None 的条件 而具体的ht会在每次插入 删除 旋转后更新
+            return p.ht if p else 0
+
+        def get_bf(self,p):#平衡因子
+            if not p: return 0#判断当p不存在时
+            left_ht = self.get_height(p.lchild)
+            right_ht = self.get_height(p.rchild)
+            return left_ht - right_ht
+
+        #右旋
+        def right_rotate(self,a):
+            b = a.lchild
+            a.lchild = b.rchild
+            b.rchild = a
+            a.ht = max(self.get_height(a.lchild),self.get_height(a.rchild)) + 1#更新a,b的高度 高度是这个节点向下数 到达None之前 最远能有几层 不是节点的层数
+            b.ht = max(self.get_height(b.lchild),self.get_height(b.rchild)) + 1#新的层数是他们的大的那个child层的max +  由于旋转后可能会改变孩子 所以不一定是原来的ht - 1
+            return b
+
+        #左旋
+        def left_rotate(self,a):
+            b = a.rchild
+            a.rchild = b.lchild
+            b.lchild = a
+            a.ht = max(self.get_height(a.lchild), self.get_height(a.rchild)) + 1
+            b.ht = max(self.get_height(b.lchild), self.get_height(b.rchild)) + 1
+            return b
+
+        def LL(self,a):#直接右旋原树
+            return self.right_rotate(a)
+
+        def RR(self,a):#直接左旋原树
+            return self.left_rotate(a)
+
+        def RL(self,a):#右旋右子树然后整体左旋
+            a.rchild = self.right_rotate(a.rchild)
+            return self.left_rotate(a)
+
+        def LR(self,a):#左旋左子树然后整体右旋
+            a.lchild = self.left_rotate(a.lchild)
+            return self.right_rotate(a)
+
+        def balence(self,p):#平衡
+            if p == None:return p
+            p.ht = max(self.get_height(p.lchild),self.get_height(p.rchild)) + 1
+            bf  = self.get_bf(p)
+
+            if bf > 1 and self.get_bf(p.lchild) > 0:#"LL型"  bf > 1:判断左右子树哪个高
+                return self.LL(p)
+
+            if bf > 1 and self.get_bf(p.lchild) < 0:#"LR型"  self.get_bf(p.lchild) < 0 通过子树的平衡因子 判断插入的是子树的左孩子还是右孩子
+                return self.LR(p)
+
+            if bf < -1 and self.get_bf(p.rchild) < 0:#"RR型"  bf < -1:判断左右子树哪个高
+                return self.RR(p)
+
+            if bf < -1 and self.get_bf(p.rchild) > 0:#"RL型"  self.get_bf(p.Rchild) < 0 通过子树的平衡因子 判断插入的是子树的左孩子还是右孩子
+                return self.RL(p)
+
+            return p
+
+        def Insert(self,p,k,d):#插入 基本和二叉排序树的插入一样 但最后要balence一下
+            if p == None:
+                return AVLNode(k,d)
+
+            if k < p.key:
+                p.lchild = self.Insert(p.lchild,k,d)
+            elif k > p.key:
+                p.rchild = self.Insert(p.rchild,k,d)
+            else:
+                p.data = d
+                return p
+
+            return self.balence(p)
